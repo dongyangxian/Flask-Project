@@ -1,4 +1,5 @@
 import redis
+import logging
 
 # 配置信息
 class Config(object):
@@ -26,11 +27,17 @@ class DevelopmentConfig(Config):
     """线下模式"""
     DEBUG = True
 
+    # 不同的环境，用不同的日志记录
+    LOG_LEVEL = logging.DEBUG
+
 class ProductConfig(Config):
     """线上模式"""
     DEBUG = False
     # 可修改线上的部署地址
     # SQLALCHEMY_DATABASE_URI = "mysql://登录名:密码@服务器ip:3306/数据库名"
+
+    # 不同的环境，用不同的日志记录
+    LOG_LEVEL = logging.WARNING
 
 # 6. 创建一个接口，供外部调用
 config_dict = {
