@@ -6,7 +6,7 @@ class Config(object):
     DEBUG = True
 
     # 1. mysql数据库配置
-    SQLALCHEMY_DATABASE_URI = "mysql://root:mysql@127.0.0.1:5000/information"
+    SQLALCHEMY_DATABASE_URI = "mysql://root:mysql@127.0.0.1:3306/information1"
     SQLALCHEMY_TRACK_MODIFICATIONS = True
 
     # 2. redis数据库配置
@@ -20,7 +20,8 @@ class Config(object):
     SESSION_TYPE = "redis"  # 指定 session 保存到 redis 中
     SESSION_USE_SIGNER = True  # 让 cookie 中的 session_id 被加密签名处理
     SESSION_REDIS = redis.StrictRedis(host=HOST, port=POST)  # 使用 redis 的实例
-    SESSION_PERMANENT = 86400  # session 的有效期，单位是秒
+    SESSION_PERMANENT = False  # session设置有过期时长的
+    PERMANENT_SESSION_LIFETIME = 86400 * 2  # 设置过期时长 默认值：timedelta(days=31)
 
 # 5 创建两个不同的开发环境类
 class DevelopmentConfig(Config):

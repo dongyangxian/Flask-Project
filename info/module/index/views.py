@@ -1,7 +1,7 @@
 from flask import session, current_app
 import logging
 from . import index_bp
-from info import redis_store
+from info import redis_store, models
 
 # 使用蓝图对象
 @index_bp.route('/')
