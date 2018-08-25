@@ -4,6 +4,7 @@ from redis import StrictRedis
 from flask_wtf import CSRFProtect
 from flask_session import Session
 from config import config_dict
+from flask_script import Manager
 
 app = Flask(__name__)
 
@@ -23,6 +24,9 @@ csrf = CSRFProtect(app)
 # 4 借助第三方Session类区调整flask中session的存储位置
 Session(app)
 
+# 7 创建manager管理类
+manager = Manager(app)
+
 @app.route('/')
 def index():
     session["name"] = "Curry"
@@ -30,4 +34,4 @@ def index():
     return 'hello'
 
 if __name__ == '__main__':
-    app.run()
+    manager.run()
