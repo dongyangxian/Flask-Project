@@ -8,6 +8,8 @@ from flask_session import Session
 from config import config_dict
 import logging
 
+from info.module.index import index_bp
+
 def create_log(config_name):
     """记录日志信息"""
     # 设置日志的记录等级
@@ -48,5 +50,8 @@ def create_app(config_name):
 
     # 4 借助第三方Session类区调整flask中session的存储位置
     Session(app)
+
+    # 注册蓝图对象
+    app.register_blueprint(index_bp)
 
     return app
