@@ -1,11 +1,14 @@
 from flask import session, current_app
 import logging
 from . import index_bp
+from info import redis_store
 
 # 使用蓝图对象
 @index_bp.route('/')
 def index():
     session["name"] = "Curry"
+
+    redis_store.set("name", "laowang")
 
     logging.debug("debug 日志信息")
     logging.info("info 日志信息")

@@ -8,8 +8,6 @@ from flask_session import Session
 from config import config_dict
 import logging
 
-from info.module.index import index_bp
-
 def create_log(config_name):
     """记录日志信息"""
     # 设置日志的记录等级
@@ -28,6 +26,12 @@ def create_log(config_name):
     # 为全局的日志工具对象（flask app使用的）添加日志记录器
     logging.getLogger().addHandler(file_log_handler)
 
+# 将数据库对象升级为全局
+# 1.2 创建数据库对象  如果app对象为空，就什么也不做，后期用的时候我们调用 init_app方法
+db = SQLAlchemy()
+
+redis_store = None  # type: StrictRedis
+
 def create_app(config_name):
     app = Flask(__name__)
 
@@ -39,9 +43,12 @@ def create_app(config_name):
     app.config.from_object(config_class)
 
     # 1.2 创建数据库对象
-    db = SQLAlchemy(app)
+    # db = SQLAlchemy(app)
+    # 懒加载，延迟加载。用的时候在加载
+    db.init_app(app)
 
     # 2.2 创建redis实例对象及配置
+    global redis_store
     redis_store = StrictRedis(host=config_dict[config_name].HOST, port=config_dict[config_name].POST,
                               db=config_dict[config_name].NUM)
 
@@ -52,6 +59,8 @@ def create_app(config_name):
     Session(app)
 
     # 注册蓝图对象
+    # 为了解决循环导入，使用蓝图时在导入
+    from info.module.index import index_bp
     app.register_blueprint(index_bp)
 
     return app
