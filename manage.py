@@ -1,5 +1,5 @@
 import redis
-from flask import Flask
+from flask import Flask, session
 from flask_sqlalchemy import SQLAlchemy
 from redis import StrictRedis
 from flask_wtf import CSRFProtect
@@ -19,7 +19,7 @@ class Config(object):
     POST = 6379
     NUM = 1
 
-    # 4 session配置
+    # 4.1 Session配置
     SECRET_KEY = "fasdhnfjasf"
 
     SESSION_TYPE = "redis"  # 指定 session 保存到 redis 中
@@ -38,8 +38,13 @@ redis_store = StrictRedis(host=Config.HOST, port=Config.POST, db=Config.NUM)
 
 # 3 开启flask后端csrf保护机制
 csrf = CSRFProtect(app)
+
+# 4 借助第三方Session类区调整flask中session的存储位置
+Session(app)
+
 @app.route('/')
 def index():
+    session["name"] = "Curry"
 
     return 'hello'
 
