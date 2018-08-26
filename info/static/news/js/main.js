@@ -154,7 +154,7 @@ var imageCodeId = ""
 function generateImageCode() {
     imageCodeId = generateUUID()
     var url = "/passport/image_code?imageCodeId=" + imageCodeId
-    $(".get_pic_code").attr("url", url)
+    $(".get_pic_code").attr("src", url)
 }
 
 // 发送短信验证码

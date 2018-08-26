@@ -3,7 +3,6 @@ from flask_script import Manager
 from info import create_app, db
 from flask_migrate import Migrate, MigrateCommand
 
-
 app = create_app("development")
 
 # 7 创建manager管理类
