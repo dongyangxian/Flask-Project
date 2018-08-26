@@ -219,7 +219,7 @@ function sendSMSCode() {
                 $(".get_code").attr("onclick", "sendSMSCode();");
 
                 // 如果错误码是4004，代表验证码错误，重新生成验证码
-                if (resp.erron == "4004" || resp.erron == "4103") {
+                if (resp.erron == "4004" || resp.erron == "4103" || resp.erron == "4002") {
                     // 当图片验证码填写错误之后重新生成一张验证码图片
                     generateImageCode()
                 }
