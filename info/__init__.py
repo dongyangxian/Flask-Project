@@ -50,10 +50,10 @@ def create_app(config_name):
     # 2.2 创建redis实例对象及配置
     global redis_store
     redis_store = StrictRedis(host=config_dict[config_name].HOST, port=config_dict[config_name].POST,
-                              db=config_dict[config_name].NUM)
+                              db=config_dict[config_name].NUM, decode_responses=True)
 
     # 3 开启flask后端csrf保护机制
-    csrf = CSRFProtect(app)
+    # csrf = CSRFProtect(app)
 
     # 4 借助第三方Session类区调整flask中session的存储位置
     Session(app)
