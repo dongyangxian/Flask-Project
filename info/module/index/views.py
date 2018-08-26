@@ -1,4 +1,4 @@
-from flask import session, current_app
+from flask import session, current_app, render_template
 import logging
 from . import index_bp
 from info import redis_store, models
@@ -18,4 +18,8 @@ def index():
 
     current_app.logger.debug("flask封装的logger日志")
 
-    return 'hello'
+    return render_template("index.html")
+
+@index_bp.route('/favicon.ico')
+def favicon():
+    return current_app.send_static_file("news/favicon.ico")
