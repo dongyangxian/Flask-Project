@@ -27,3 +27,8 @@ def send_mes():
     response = make_response(image)
     response.headers["Content-Type"] = "image/jpeg"
     return response
+
+# 127.0.0.1:5000/passport/sms_code
+@passport_bp.route("/sms_code")
+def send_sms():
+    pass

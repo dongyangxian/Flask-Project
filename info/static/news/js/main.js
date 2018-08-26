@@ -177,6 +177,21 @@ function sendSMSCode() {
     }
 
     // TODO 发送短信验证码
+    var image_data = {
+        "mobile": mobile,
+        "imageCode": imageCode,
+        "imageCodeId": imageCodeId
+    }
+    $.ajax({
+        url: "/passport/sms_code",
+        type:"json",  //指明发送给后台的数据是json格式
+        contentType:"application/json",
+        dataType:"json",   //接受到后台的数据为json格式
+        data:JSON.stringify(image_data),
+        success:function () {
+            
+        }
+    })
 }
 
 // 调用该函数模拟点击左侧按钮
