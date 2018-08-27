@@ -58,7 +58,7 @@ def send_sms():
         real_image_code = redis_store.get("imageCode_%s" % imagecodeId)  # (上一个方法中设置了值的加密格式)
         # 3.2 如果值存在就把它删除
         if real_image_code:
-            redis_store.delete(real_image_code)
+            redis_store.delete("imageCode_%s" % imagecodeId)
     except Exception as e:
         current_app.logger.error(e)
 
