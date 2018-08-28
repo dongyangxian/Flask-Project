@@ -1,7 +1,8 @@
+from flask import abort
 from flask import current_app, g
 from flask import session
 
-from info import constants
+from info import constants, db
 from info.models import User, News, Category
 from info.module.news import news_bp
 from flask import render_template
@@ -27,8 +28,27 @@ def news_detail(news_id):
     for news in news_model_list if news_model_list else []:
         news_dict_list.append(news.to_dict())
 
+    # -----------新闻详情内容取出----------
+    # 1. 根据前端发送的新闻编号，查找对应的新闻数据
+    try:
+        news = News.query.get(news_id)
+    except Exception as e:
+        current_app.logger.error(e)
+    if not news:
+        abort(404)
+
+    # 2. 浏览量增加及数据库提交操作
+    news.clicks += 1
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        abort(404)
+
     # 3. 将模型信息转化为字典信息
     data = {
+        "news": news.to_dict(),
         "user_info": user.to_dict() if user else None,
         "news_info": news_dict_list
     }
