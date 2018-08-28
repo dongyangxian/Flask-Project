@@ -110,6 +110,30 @@ $(function(){
         }
 
         // 发起登录请求
+        var params = {
+            "mobile": mobile,
+            "password": password
+        }
+        $.ajax({
+                    url: "/passport/login",
+                    type: "post",
+                    data: JSON.stringify(params),
+                    contentType: "application/json",
+                    dataType: "json",
+                    // headers: {
+                    //      "X-CSRFToken": getCookie("csrf_token")
+                    //  },
+                    success:  function (resp) {
+                        if(resp.errno == 0){
+                            // 注册成功回调
+                            location.reload()
+                        }else{
+                            $("#login-password-err").html(resp.errmsg)
+                            $("#login-password-err").show()
+                        }
+                    }
+
+                })
     })
 
 

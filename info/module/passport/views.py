@@ -12,9 +12,56 @@ import random
 from info.lib.yuntongxun.sms import CCP
 from datetime import datetime
 
+# 127.0.0.1:5000/passport/login
+@passport_bp.route('/login', methods=["POST"])
+def login():
+    """登录接口"""
+    # 1. 获取数据
+    param_dict = request.json
+    mobile = param_dict.get("mobile")
+    password = param_dict.get("password")
+
+    # 2. 数据判断
+    # 2.1 判断值是否都已经输入了
+    if not all([mobile, password]):
+        return jsonify(erron=RET.PARAMERR, errmsg="参数不足")
+    # 2.2 验证手机号码格式
+    if not re.match("^1[356789][0-9]{9}$", mobile):
+        return jsonify(erron=RET.PARAMERR, errmsg="手机格式有误")
+
+    # 3 逻辑处理
+    # 3.1 判断用户是否存在
+    try:
+        user = User.query.filter_by(mobile=mobile).first()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询用户对象异常")
+    if not user:
+        return jsonify(errno=RET.NODATA, errmsg="用户不存在")
+    # 3.2 用户存在,判断密码是否正确
+    if not user.check_passowrd(password):
+        return jsonify(errno=RET.DATAERR, errmsg="密码填写错误")
+    # 3.3 如果密码也正确，使用session保存一下值，并记录一下最后一次登录的时间
+    session["user_id"] = user.id
+    session["mobile"] = user.mobile
+    session["nick_name"] = user.nick_name
+    user.last_login = datetime.now()
+
+    # 3.4 当修改了模型身上的属性时，不需要add只需commit
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="用户对象保存到数据库异常")
+
+    # 4. 返回值
+    return jsonify(errno=RET.OK, errmsg="登录成功")
+
 # 127.0.0.1:5000/passport/register
 @passport_bp.route('/register', methods=["POST"])
 def register():
+    """注册接口"""
     # 1. 获取数据
     param_dict = request.json
     mobile = param_dict.get("mobile")
