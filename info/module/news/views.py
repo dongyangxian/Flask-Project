@@ -46,8 +46,19 @@ def news_detail(news_id):
         db.session.rollback()
         abort(404)
 
+    # -----------查询用户是否收藏过该新闻----------
+    # 1. 使用id_collected 来判断
+    # True：用户收藏过   False：未收藏
+    is_collected = False
+
+    # 2. 如果用户在登录的情况下,查询该用户是否收藏过
+    if user:
+        if news in user.collection_news:
+            is_collected = True
+
     # 3. 将模型信息转化为字典信息
     data = {
+        "is_collected": is_collected,
         "news": news.to_dict(),
         "user_info": user.to_dict() if user else None,
         "news_info": news_dict_list
