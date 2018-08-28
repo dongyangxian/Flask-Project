@@ -1,4 +1,4 @@
-from flask import session, current_app, render_template, request, jsonify
+from flask import session, current_app, render_template, request, jsonify, g
 import logging
 
 from info.models import User, News, Category
@@ -6,6 +6,7 @@ from info.utlis.response_code import RET
 from . import index_bp
 from info import redis_store, models
 from info import constants
+from info.utlis.common import login_user_data
 
 # 127.0.0.1:5000/news_list
 @index_bp.route('/news_list')
@@ -66,15 +67,10 @@ def get_news_list():
 
 # 使用蓝图对象
 @index_bp.route('/')
+@login_user_data
 def index():
-
-    # 1. 获取session中保存的用户信息
-    user_id = session.get("user_id")
-    # 2. 根据获取到的id去数据库查询用户的信息
-    user = None  # type:  User
-    if user_id:
-        user = User.query.get(user_id)
-
+    # 获取用户
+    user = g.user
 
     # -----------新闻点击排行----------
     # 1. 查询出新闻的排序及限制模型列表

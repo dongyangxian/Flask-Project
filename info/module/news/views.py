@@ -1,21 +1,19 @@
-from flask import current_app
+from flask import current_app, g
 from flask import session
 
 from info import constants
 from info.models import User, News, Category
 from info.module.news import news_bp
 from flask import render_template
+from info.utlis.common import login_user_data
 
 # 127.0.0.1:5000/news/1
 @news_bp.route('/<int:news_id>')
+@login_user_data
 def news_detail(news_id):
     """新闻详情首页"""
-    # 1. 获取session中保存的用户信息
-    user_id = session.get("user_id")
-    # 2. 根据获取到的id去数据库查询用户的信息
-    user = None  # type:  User
-    if user_id:
-        user = User.query.get(user_id)
+    # 调用装饰器函数，获取用户
+    user = g.user
 
     # -----------新闻点击排行----------
     # 1. 查询出新闻的排序及限制模型列表
