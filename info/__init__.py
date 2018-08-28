@@ -78,4 +78,8 @@ def create_app(config_name):
     from info.module.passport import passport_bp
     app.register_blueprint(passport_bp)
 
+    # 注册过滤器
+    from info.utlis.common import do_index_class
+    app.add_template_filter(do_index_class, "do_index_class")
+
     return app
