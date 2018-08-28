@@ -1,7 +1,5 @@
 from flask import session, current_app, g
-
-
-
+import functools
 
 def do_index_class(index):
     if index == 1:
@@ -15,12 +13,17 @@ def do_index_class(index):
 
 # 只要调用该装饰器就能获取用户对象数据
 def login_user_data(view_func):
+    # 使用functool这个工具防止装饰器修改函数的名称。在映射关系中，保持原函数名不变
+    # 使用前：只要调用该方法的函数名全部变为wrapper
+    #   <Rule '/news/<news_id>' (HEAD, OPTIONS, GET) -> news.wrapper>
+    # TODO 使用后： <Rule '/news/<news_id>' (HEAD, GET, OPTIONS) -> news.news_detail>
+    @functools.wraps(view_func)
     def wrapper(*args, **kwargs):
         # 1. 获取session中保存的用户信息
         user_id = session.get("user_id")
         # 2. 根据获取到的id去数据库查询用户的信息
         user = None  # type:  User
-        
+
         from info.models import User
         try:
             if user_id:
