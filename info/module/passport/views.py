@@ -1,13 +1,79 @@
+from flask import session
+
 from info.module.passport import passport_bp
 from flask import request, abort, make_response, jsonify, current_app
 from info.utlis.captcha.captcha import captcha
-from info import redis_store
+from info import redis_store, db
 from info import constants
 from info.utlis.response_code import RET
 import re
 from info.models import User
 import random
 from info.lib.yuntongxun.sms import CCP
+from datetime import datetime
+
+# 127.0.0.1:5000/passport/register
+@passport_bp.route('/register', methods=["POST"])
+def register():
+    # 1. 获取数据
+    param_dict = request.json
+    mobile = param_dict.get("mobile")
+    smscode = param_dict.get("smscode")
+    password = param_dict.get("password")
+
+    # 2. 数据判断
+    # 2.1 判断值是否都已经输入了
+    if not all([mobile, smscode, password]):
+        return jsonify(erron=RET.PARAMERR, errmsg="参数不足")
+    # 2.2 验证手机号码格式
+    if not re.match("^1[356789][0-9]{9}$", mobile):
+        return jsonify(erron=RET.PARAMERR, errmsg="手机格式有误")
+
+    # 3.1 根据手机号编码获取数据库中的真实验证码
+    try:
+        real_sms_code = redis_store.get("sms_%s" % mobile)
+        if real_sms_code:
+            redis_store.delete("sms_%s" % mobile)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="获取短信验证码数据库异常")
+    if not real_sms_code:
+        # 没有值表示短信验证码过期了
+        return jsonify(errno=RET.NODATA, errmsg="短信验证码过期")
+    # 3.2 对比用户添加的短信验证码和真实的短信验证码对比
+    if smscode != real_sms_code:
+        return jsonify(errno=RET.PARAMERR, errmsg="短信验证码填写错误")
+
+    # 3.3 一致表示用户输入的手机号和验证码都是正确的
+    # 创建用户对象 给对应属性赋值
+    user = User()
+
+    user.mobile = mobile
+    user.nick_name = mobile
+
+    # 需要将加密的密码加密
+    user.password = password
+
+    # 记录一下最后一次保存的登录时间
+    user.create_time = datetime.now()
+
+    # 将信息保存到数据库中
+    try:
+        db.session.add(user)
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        # 回滚
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="保存用户对象到数据库异常")
+
+    # 3.4 使用session保存用户信息，以便自动登录
+    session["user_id"] = user.id
+    session["mobile"] = user.mobile
+    session["nick_name"] = user.nick_name
+
+    # 返回响应对象
+    return jsonify(errno=RET.OK, errmsg="注册成功！")
 
 # 127.0.0.1:5000/passport/image_code
 @passport_bp.route("/image_code")
@@ -84,6 +150,7 @@ def send_sms():
     sms_code = random.randint(0, 999999)
     sms_code = "%06d" % sms_code
 
+    print(sms_code)
     # 3.8 使用云通讯的发送短信接口进行发送
     result = CCP().send_template_sms(mobile, [sms_code, constants.SMS_CODE_REDIS_EXPIRES/5/60], 1)
 
