@@ -1,7 +1,7 @@
 from flask import session, current_app, render_template, request, jsonify
 import logging
 
-from info.models import User, News
+from info.models import User, News, Category
 from info.utlis.response_code import RET
 from . import index_bp
 from info import redis_store, models
@@ -88,8 +88,21 @@ def index():
     for news in news_model_list if news_model_list else []:
         news_dict_list.append(news.to_dict())
 
+    # -----------新闻列表分类----------
+    # 1. 取出所有分类数据
+    try:
+        categgories = Category.query.all()
+    except Exception as e:
+        current_app.logger.error(e)
+
+    # 2. 模型列表转化为字典列表
+    categgory_dict_list = []
+    for category in categgories if categgories else []:
+        categgory_dict_list.append(category.to_dict())
+
     # 3. 将模型信息转化为字典信息
     data = {
+        "category_dict_list": categgory_dict_list,
         "user_info": user.to_dict() if user else None,
         "news_info": news_dict_list
     }
