@@ -1,6 +1,7 @@
 from logging.handlers import RotatingFileHandler
 
 from flask import Flask
+from flask.ext.wtf.csrf import generate_csrf
 from flask_sqlalchemy import SQLAlchemy
 from redis import StrictRedis
 from flask_wtf import CSRFProtect
@@ -53,10 +54,21 @@ def create_app(config_name):
                               db=config_dict[config_name].NUM, decode_responses=True)
 
     # 3 开启flask后端csrf保护机制
-    # csrf = CSRFProtect(app)
+    csrf = CSRFProtect(app)
 
     # 4 借助第三方Session类区调整flask中session的存储位置
     Session(app)
+
+    # 完善CSRF_Token保护机制
+    @app.after_request
+    def after_request(response):
+        # 1. 生成csrf_token值
+        csrf_token = generate_csrf()
+        # 2. 将值传送给前端浏览器.借助response对象设置到cookie中
+        response.set_cookie("csrf_token", csrf_token)
+
+        # 3. 返回值
+        return response
 
     # 注册蓝图对象
     # 为了解决循环导入，使用蓝图时在导入

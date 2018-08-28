@@ -120,9 +120,9 @@ $(function(){
                     data: JSON.stringify(params),
                     contentType: "application/json",
                     dataType: "json",
-                    // headers: {
-                    //      "X-CSRFToken": getCookie("csrf_token")
-                    //  },
+                    headers: {
+                         "X-CSRFToken": getCookie("csrf_token")
+                     },
                     success:  function (resp) {
                         if(resp.errno == 0){
                             // 注册成功回调
@@ -179,9 +179,9 @@ $(function(){
                     data: JSON.stringify(params),
                     contentType: "application/json",
                     dataType: "json",
-                    // headers: {
-                    //      "X-CSRFToken": getCookie("csrf_token")
-                    //  },
+                    headers: {
+                         "X-CSRFToken": getCookie("csrf_token")
+                     },
                     success:  function (resp) {
                         if(resp.errno == "0"){
                             // 注册成功回调
@@ -236,6 +236,9 @@ function sendSMSCode() {
         contentType:"application/json",  //指明发送给后台的数据是json格式
         dataType:"json",   //接受到后台的数据为json格式
         data:JSON.stringify(image_data),
+        headers: {
+                         "X-CSRFToken": getCookie("csrf_token")
+                     },
         success:function (resp) {
             if(resp.erron == 0){
                 //发送短信验证码成功的回调
