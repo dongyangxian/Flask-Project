@@ -12,6 +12,15 @@ import random
 from info.lib.yuntongxun.sms import CCP
 from datetime import datetime
 
+# 127.0.0.1:5000/passport/login_out
+@passport_bp.route('/login_out', methods=["POST"])
+def login_out():
+    """退出接口"""
+    session.pop("user_id")
+    session.pop("mobile")
+    session.pop("nick_name")
+
+    return jsonify(errno=RET.OK, errmsg="已退出")
 # 127.0.0.1:5000/passport/login
 @passport_bp.route('/login', methods=["POST"])
 def login():

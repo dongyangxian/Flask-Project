@@ -196,6 +196,27 @@ $(function(){
     })
 })
 
+function login_out() {
+    $.ajax({
+                url: "/passport/login_out",
+                type: "post",
+                dataType: "json",
+                headers: {
+                     "X-CSRFToken": getCookie("csrf_token")
+                 },
+                success:  function (resp) {
+                    if(resp.errno == 0){
+                        // 注册成功回调
+                        location.reload()
+                    }else{
+                        $("#register-password-err").html(resp.errmsg)
+                        $("#register-password-err").show()
+                    }
+                }
+
+            })
+}
+
 var imageCodeId = ""
 
 // TODO 生成一个图片验证码的编号，并设置页面中图片验证码img标签的src属性
