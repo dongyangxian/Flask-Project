@@ -3,15 +3,64 @@ from flask import current_app, g, request
 from flask import session
 
 from info import constants, db
-from info.models import User, News, Category
+from info.models import User, News, Category, Comment
 from info.module.news import news_bp
 from flask import render_template
 from info.utlis.common import login_user_data
-
-# 127.0.0.1:5000/news/news_collect
 from info.utlis.response_code import RET
 
+# 127.0.0.1:5000/news/news_comment
+@news_bp.route('/news_comment', methods=["POST"])
+@login_user_data
+def news_comment():
+    # 1. 获取参数
+    params_dict = request.json
+    news_id = params_dict.get("news_id")
+    comment = params_dict.get("comment")
+    parent_id = params_dict.get("parent_id")  # 如果前端没有传，表示当前是评论新闻，不是评论别人
+    user = g.user
+    # 2. 校验参数
+    # 2.1 非空判断
+    if not all([news_id, comment]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
 
+    # 2.2 用户是否登录
+    if not user:
+        return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
+
+    # 3. 逻辑处理
+    # 3.1 获取要评论的新闻，判断是否存在
+    try:
+        news = News.query.get(news_id)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询新闻对象异常")
+    if not news:
+        return jsonify(errno=RET.NODATA, errmsg="新闻不存在")
+
+    # 3.2 创建评论模型
+    comment_model = Comment()
+    comment_model.user_id = user.id
+    comment_model.news_id = news_id
+    comment_model.content = comment
+
+    # 3.3 判断parent_id是否有值
+    if parent_id:
+        comment_model.parent_id = parent_id
+
+    # 3.4 将模型对象保存到数据库
+    try:
+        db.session.add(comment_model)
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="保存评论对象到数据库异常")
+
+    # 4. 返回值
+    return jsonify(errno=RET.OK, errmsg="评论成功", data=comment_model.to_dict())
+
+# 127.0.0.1:5000/news/news_collect
 @news_bp.route('/news_collect', methods=["POST"])
 @login_user_data
 def news_collect():

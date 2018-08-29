@@ -25,19 +25,23 @@
         <a href="javascript:;" class="collection block-center" data-newid="{{ data.news.id }}" style="display: {% if data.is_collected %} none
             {% else %} block {% endif %};">收藏</a>
 
-
-        <div class="comment_form_logout">
-            登录发表你的评论
-        </div>
-
-        <form action="" class="comment_form">
-            <div class="person_pic">
-                <img src="../../static/news/images/cat.jpg" alt="用户图标">
+        {% if not data.user_info %}
+            <div class="comment_form_logout">
+                登录发表你的评论
             </div>
-            <textarea placeholder="请发表您的评论" class="comment_input"></textarea>
-            <input type="submit" name="" value="评 论" class="comment_sub">
-        </form>
-
+        {% else %}
+            <form action="" class="comment_form" data-newsid="{{ data.news.id }}">
+                <div class="person_pic">
+                    <img src="
+                    {% if data.user_info.avatar_url %} {{ data.user_info.avatar_url }}
+                    {% else %} ../../static/news/images/person01.png
+                    {% endif %}"
+                         alt="用户图标">
+                </div>
+                <textarea placeholder="请发表您的评论" class="comment_input"></textarea>
+                <input type="submit" name="" value="评 论" class="comment_sub">
+            </form>
+        {% endif %}
 
         <div class="comment_count">
             4条评论
