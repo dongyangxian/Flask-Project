@@ -25,7 +25,7 @@
                 <!-- 用户登录后显示下面，隐藏上面 -->
                 <div class="user_login fr">
                     <img src="{% if data.user_info.avatar_url %}{{ data.user_info.avatar_url }}{% else %}../../static/news/images/person01.png{% endif %}" class="lgin_pic">
-                    <a href="#">{{ data.user_info.nick_name }}</a>
+                    <a href="{{ url_for("profile.user_info") }}">{{ data.user_info.nick_name }}</a>
                     <a href="javascript:;" onclick="login_out()">退出</a>
                 </div>
             {% else %}
@@ -44,23 +44,25 @@
         {% endblock %}
 
 
-        <div class="rank_con fr">
+        {% block rankBlock %}
+            <div class="rank_con fr">
+                {% block authorBlock %}
 
-            {% block authorBlock %}
+                {% endblock %}
 
-            {% endblock %}
+                <div class="rank_title">
+                    <h3>点击排行</h3>
+                </div>
 
-            <div class="rank_title">
-                <h3>点击排行</h3>
+                <ul class="rank_list">
+                    {% for news in data.news_info %}
+                        <li><span class="{{ loop.index | do_index_class }}">{{ loop.index }}</span><a href="/news/{{ news.id }}">{{ news.title }}</a></li>
+                    {% endfor %}
+
+                </ul>
             </div>
+        {% endblock %}
 
-            <ul class="rank_list">
-                {% for news in data.news_info %}
-                    <li><span class="{{ loop.index | do_index_class }}">{{ loop.index }}</span><a href="/news/{{ news.id }}">{{ news.title }}</a></li>
-                {% endfor %}
-
-            </ul>
-        </div>
     </div>
     <div class="footer">
         <div class="footer_links">
