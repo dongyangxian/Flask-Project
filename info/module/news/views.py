@@ -158,8 +158,21 @@ def news_detail(news_id):
         if news in user.collection_news:
             is_collected = True
 
+    # -----------评论列表数据展现----------
+    # 1. 在评论列表查询所有的评论
+    try:
+        comments = Comment.query.filter(Comment.news_id == news_id).order_by(Comment.create_time.desc()).all()
+    except Exception as e:
+        current_app.logger.error(e)
+
+    # 2. 将模型列表转换为字典列表
+    comment_dict_list = []
+    for comment in comments if comments else []:
+        comment_dict_list.append(comment.to_dict())
+
     # 3. 将模型信息转化为字典信息
     data = {
+        "comments": comment_dict_list,
         "is_collected": is_collected,
         "news": news.to_dict(),
         "user_info": user.to_dict() if user else None,
