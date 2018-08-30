@@ -8,6 +8,11 @@ from flask import render_template, g, request, jsonify
 from info.utlis.common import login_user_data
 from info.utlis.response_code import RET
 
+@profile_bp.route('/pic_info', methods=["POST", "GET"])
+def pic_info():
+    """展示用户头像及修改头像接口"""
+    if request.method == "GET":
+        return render_template('news/user_pic_info.html')
 
 @profile_bp.route('/base_info', methods=["POST", "GET"])
 @login_user_data
