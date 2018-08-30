@@ -236,35 +236,35 @@ def news_detail(news_id):
     except Exception as e:
         current_app.logger.error(e)
 
-    # 2. 将模型列表转换为字典列表
-    comment_dict_list = []
-    for comment in comments if comments else []:
-        comment_dict_list.append(comment.to_dict())
-
-    # # -----------查询该用户对这个新闻的哪些评论点过赞----------
-    #
-    # # 1. 根据新闻id获取所属的所有评论id  —>  list[1,2,3,4,5,6]
-    # comment_id_list = [comment.id for comment in comments]
-    # # 2. 使用点赞评论模型去查询所有点过赞的评论
-    # commentlike_model_list = Comment.query.filter(CommentLike.comment_id.in_(comment_id_list),
-    #                                               CommentLike.user_id == user.id
-    #                                               )
-    # # 3. 根据查到的评论模型列表获取点过赞的评论id
-    # commentlike_id_list = [commentlike.comment_id for commentlike in commentlike_model_list]
-    #
     # # 2. 将模型列表转换为字典列表
     # comment_dict_list = []
     # for comment in comments if comments else []:
-    #     comment_dict = comment.to_dict()
-    #
-    #     # 4. 评论点赞的标志位
-    #     comment_dict["is_like"] = False
-    #
-    #     # 5. 如果当前评论的id与点赞的id一致，就让它显示
-    #     if comment.id in commentlike_id_list:
-    #         comment_dict["is_like"] = True
-    #
-    #     comment_dict_list.append(comment_dict)
+    #     comment_dict_list.append(comment.to_dict())
+
+    # -----------查询该用户对这个新闻的哪些评论点过赞----------
+
+    # 1. 根据新闻id获取所属的所有评论id  —>  list[1,2,3,4,5,6]
+    comment_id_list = [comment.id for comment in comments]
+    # 2. 使用点赞评论模型去查询所有点过赞的评论
+    commentlike_model_list = CommentLike.query.filter(CommentLike.comment_id.in_(comment_id_list),
+                                                  CommentLike.user_id == user.id
+                                                  )
+    # 3. 根据查到的评论模型列表获取点过赞的评论id
+    commentlike_id_list = [commentlike.comment_id for commentlike in commentlike_model_list]
+
+    # 2. 将模型列表转换为字典列表
+    comment_dict_list = []
+    for comment in comments if comments else []:
+        comment_dict = comment.to_dict()
+
+        # 4. 评论点赞的标志位
+        comment_dict["is_like"] = False
+
+        # 5. 如果当前评论的id与点赞的id一致，就让它显示
+        if comment.id in commentlike_id_list:
+            comment_dict["is_like"] = True
+
+        comment_dict_list.append(comment_dict)
 
     # 3. 将模型信息转化为字典信息
     data = {
