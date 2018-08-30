@@ -3,11 +3,82 @@ from flask import current_app, g, request
 from flask import session
 
 from info import constants, db
-from info.models import User, News, Category, Comment
+from info.models import User, News, Category, Comment, CommentLike
 from info.module.news import news_bp
 from flask import render_template
 from info.utlis.common import login_user_data
 from info.utlis.response_code import RET
+
+# 127.0.0.1:5000/news/comment_like
+@news_bp.route('/comment_like', methods=["POST"])
+@login_user_data
+def comment_like():
+    # 1. 获取参数
+    params_dict = request.json
+    news_id = params_dict.get("news_id")
+    comment_id = params_dict.get("comment_id")
+    action = params_dict.get("action")
+    user = g.user
+
+    # 2. 参数校验
+    #  2.1 非空判断
+    if not all([news_id, comment_id, action]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
+
+    # 2.2 用户判断
+    if not user:
+        return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
+
+    # 2.3 点击行为判断
+    if action not in ["add", "remove"]:
+        return jsonify(errno=RET.PARAMERR, errmsg="action数据填写错误")
+
+    # 3. 逻辑处理
+    # 3.1 根据评论的id获取评论模型对象（只有评论存在的时候才能去点赞和取消）
+    try:
+        comment = Comment.query.get(comment_id)
+        if not comment:
+            return jsonify(errno=RET.NODATA, errmsg="评论不存在")
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询评论数据异常")
+
+    # 3.2 根据行为去判断点赞或者取消点赞
+    if action == "add":
+        # 根据用户id和评论的id来查询CommentLike是否存在。不存在才能点赞
+        comment_like = CommentLike.query.filter(CommentLike.comment_id == comment_id,
+                                                CommentLike.user_id == user.id
+                                                ).first()
+        if not comment_like:
+            # 如果不存在，就新建一个点赞的评论模型到数据库保存
+            comment_like1 = CommentLike()
+            comment_like1.user_id = user.id
+            comment_like1.comment_id = comment_id
+            db.session.add(comment_like1)
+
+            # 点赞的数量加1
+            comment.like_count += 1
+    else:
+        # 根据用户id和评论的id来查询CommentLike是否存在。不存在才能点赞
+        comment_like = CommentLike.query.filter(CommentLike.comment_id == comment_id,
+                                                CommentLike.user_id == user.id
+                                                ).first()
+        # CommentLike存在时，才能取消点赞
+        if comment_like:
+            db.session.delete(comment_like)
+
+            # 点赞的数量减1
+            comment.like_count -= 1
+    # 3.3 将修改的评论模型对象保存到数据库中
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="保存数据异常")
+
+    # 4. 返回值
+    return jsonify(errno=RET.OK, errmsg="OK")
 
 # 127.0.0.1:5000/news/news_comment
 @news_bp.route('/news_comment', methods=["POST"])
@@ -169,6 +240,31 @@ def news_detail(news_id):
     comment_dict_list = []
     for comment in comments if comments else []:
         comment_dict_list.append(comment.to_dict())
+
+    # # -----------查询该用户对这个新闻的哪些评论点过赞----------
+    #
+    # # 1. 根据新闻id获取所属的所有评论id  —>  list[1,2,3,4,5,6]
+    # comment_id_list = [comment.id for comment in comments]
+    # # 2. 使用点赞评论模型去查询所有点过赞的评论
+    # commentlike_model_list = Comment.query.filter(CommentLike.comment_id.in_(comment_id_list),
+    #                                               CommentLike.user_id == user.id
+    #                                               )
+    # # 3. 根据查到的评论模型列表获取点过赞的评论id
+    # commentlike_id_list = [commentlike.comment_id for commentlike in commentlike_model_list]
+    #
+    # # 2. 将模型列表转换为字典列表
+    # comment_dict_list = []
+    # for comment in comments if comments else []:
+    #     comment_dict = comment.to_dict()
+    #
+    #     # 4. 评论点赞的标志位
+    #     comment_dict["is_like"] = False
+    #
+    #     # 5. 如果当前评论的id与点赞的id一致，就让它显示
+    #     if comment.id in commentlike_id_list:
+    #         comment_dict["is_like"] = True
+    #
+    #     comment_dict_list.append(comment_dict)
 
     # 3. 将模型信息转化为字典信息
     data = {
