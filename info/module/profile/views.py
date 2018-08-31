@@ -14,13 +14,17 @@ from info import constants
 @login_user_data
 def pic_info():
     """展示用户头像及修改头像接口"""
+    user = g.user
+
     if request.method == "GET":
-        return render_template('news/user_pic_info.html')
+        data = {
+            "user_info": user.to_dict() if user else []
+        }
+        return render_template('news/user_pic_info.html',data=data)
 
     # 1. 获取参数
     # POST获取用户上传的图片二进制数据上传到七牛云
     avatar_data = request.files.get("avatar").read()
-    user = g.user
 
     # 2. 校验参数
     if not avatar_data:
