@@ -7,12 +7,53 @@ from flask import render_template, g, request, jsonify
 
 from info.utlis.common import login_user_data
 from info.utlis.response_code import RET
+from info.utlis.image_store import qiniu_image_store
+from info import constants
 
 @profile_bp.route('/pic_info', methods=["POST", "GET"])
+@login_user_data
 def pic_info():
     """展示用户头像及修改头像接口"""
     if request.method == "GET":
         return render_template('news/user_pic_info.html')
+
+    # 1. 获取参数
+    # POST获取用户上传的图片二进制数据上传到七牛云
+    avatar_data = request.files.get("avatar").read()
+    user = g.user
+
+    # 2. 校验参数
+    if not avatar_data:
+        return jsonify(errno=RET.NODATA, errmsg="图片数据不能为空")
+    if not user:
+        return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
+    # 3. 逻辑处理
+    # 3.1 调用封装好的方法将图片上传到七牛云
+    try:
+        image_name = qiniu_image_store(avatar_data)
+        print(image_name)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.THIRDERR, errmsg="上传图片到七牛云失败")
+
+    # 3.2 只将图片名称存储，防止后期修改七牛云域名
+    user.avatar_url = image_name
+
+    # 3.3 提交保存数据
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="保存用户url失败")
+
+    # 3.4 组织响应对象
+    full_url = constants.QINIU_DOMIN_PREFIX + image_name
+    data = {
+        "avatar_url": full_url
+    }
+    # 4. 返回值
+    return jsonify(errno=RET.OK, errmsg="上传图片到七牛云成功", data=data)
 
 @profile_bp.route('/base_info', methods=["POST", "GET"])
 @login_user_data

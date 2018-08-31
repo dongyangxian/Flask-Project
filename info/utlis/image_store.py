@@ -15,7 +15,7 @@ def qiniu_image_store(data):
     token = q.upload_token(bucket_name)
     try:
         ret, info = qiniu.put_data(token, None, data)
-        if ret is not None:
+        if ret is not None and info.status_code == 200:
             # print(ret)
             print('All is OK----')
             # print(info)
