@@ -242,15 +242,16 @@ def news_detail(news_id):
     #     comment_dict_list.append(comment.to_dict())
 
     # -----------查询该用户对这个新闻的哪些评论点过赞----------
-
-    # 1. 根据新闻id获取所属的所有评论id  —>  list[1,2,3,4,5,6]
-    comment_id_list = [comment.id for comment in comments]
-    # 2. 使用点赞评论模型去查询所有点过赞的评论
-    commentlike_model_list = CommentLike.query.filter(CommentLike.comment_id.in_(comment_id_list),
-                                                  CommentLike.user_id == user.id
-                                                  )
-    # 3. 根据查到的评论模型列表获取点过赞的评论id
-    commentlike_id_list = [commentlike.comment_id for commentlike in commentlike_model_list]
+    commentlike_id_list = []
+    if user:
+        # 1. 根据新闻id获取所属的所有评论id  —>  list[1,2,3,4,5,6]
+        comment_id_list = [comment.id for comment in comments]
+        # 2. 使用点赞评论模型去查询所有点过赞的评论
+        commentlike_model_list = CommentLike.query.filter(CommentLike.comment_id.in_(comment_id_list),
+                                                      CommentLike.user_id == user.id
+                                                      )
+        # 3. 根据查到的评论模型列表获取点过赞的评论id
+        commentlike_id_list = [commentlike.comment_id for commentlike in commentlike_model_list]
 
     # 2. 将模型列表转换为字典列表
     comment_dict_list = []
