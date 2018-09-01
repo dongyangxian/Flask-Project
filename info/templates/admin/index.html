@@ -15,8 +15,9 @@
 	
 	<div class="side_bar">
 		<div class="user_info">
-			<img src="../../static/admin/images/person.png" alt="张大山">
-			<p>欢迎你 <em>张大山</em></p>
+			<img src="{% if data.user_info.avatar_url %}{{ data.user_info.avatar_url }}{% else %}../../static/admin/images/person.png
+            {% endif %}" alt="{{ data.user_info.nick_name }}">
+			<p>欢迎你 <em>{{ data.user_info.nick_name }}</em></p>
 		</div>
 
 		<div class="menu_con">

@@ -21,7 +21,7 @@ def login_out():
     session.pop("nick_name")
 
     # 清除管理员信息
-    session.pop("is_admin")
+    session.pop("is_admin", None)
 
     return jsonify(errno=RET.OK, errmsg="已退出")
 # 127.0.0.1:5000/passport/login

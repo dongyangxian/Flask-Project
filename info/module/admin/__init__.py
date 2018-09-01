@@ -9,7 +9,7 @@ from .views import *
 def before_request():
     """拦截普通用户能够进入后台管理页面"""
     # 不是去访问 /admin/login 就进入if判断进行拦截处理
-    if not request.url.endswith(url_for("admin.admin_login")):
+    if not request.url.endswith(url_for("admin.login")):
         # 从session中获取管理员用户数据
         user_id = session.get("user_id", None)
         is_admin = session.get("is_admin", None)

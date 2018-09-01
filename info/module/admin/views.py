@@ -10,7 +10,11 @@ from info.utlis.common import login_user_data
 @admin_bp.route('/index')
 @login_user_data
 def admin_index():
-    return render_template("admin/index.html")
+    user = g.user
+    data = {
+        "user_info": user.to_dict() if user else []
+    }
+    return render_template("admin/index.html", data=data)
 
 @admin_bp.route('/login', methods=["POST", "GET"])
 @login_user_data
