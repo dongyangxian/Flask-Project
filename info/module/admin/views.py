@@ -5,10 +5,52 @@ from flask import current_app
 from flask import g
 from flask import session, redirect, url_for
 
+from info import constants
 from info.models import User
 from info.module.admin import admin_bp
 from flask import render_template, request
 from info.utlis.common import login_user_data
+
+@admin_bp.route('/user_list')
+@login_user_data
+def user_list():
+    """用户列表展示"""
+    # 1. 获取页码参数
+    p = request.args.get("p")
+    user = g.user
+    # 2. 校验页码，如果不正确，赋值为1
+    try:
+        p = int(p)
+    except Exception as e:
+        current_app.logger.error(e)
+        p = 1
+
+    user_list = []
+    current_page = 1
+    total_page = 1
+    if user:
+        # 3. 逻辑处理
+        try:
+            paginates = User.query.filter(User.is_admin == False).paginate(p, constants.USER_COLLECTION_MAX_NEWS, False)
+            # 3.1 获取相关数据
+            user_list = paginates.items
+            current_page = paginates.page
+            total_page = paginates.pages
+        except Exception as e:
+            current_app.logger.error(e)
+
+        # 3.2 转化为字典列表
+        user_dict_list = []
+        for user in user_list if user_list else []:
+            user_dict_list.append(user.to_dict())
+
+        # 4. 返回值
+        data = {
+            "users": user_dict_list,
+            "current_page": current_page,
+            "total_page": total_page
+        }
+        return render_template("admin/user_list.html", data=data)
 
 @admin_bp.route('/user_count')
 @login_user_data
