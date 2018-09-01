@@ -11,6 +11,47 @@ from info.utlis.response_code import RET
 from info.utlis.image_store import qiniu_image_store
 from info import constants
 
+@profile_bp.route('/news_list')
+@login_user_data
+def news_list():
+    """展示用户发布的所有新闻列表接口"""
+    # 1. 获取页码参数
+    p = request.args.get("p")
+    user = g.user
+    # 2. 校验页码，如果不正确，赋值为1
+    try:
+        p = int(p)
+    except Exception as e:
+        current_app.logger.error(e)
+        p = 1
+
+    news_list = []
+    current_page = 1
+    total_page = 1
+    if user:
+        # 3. 逻辑处理
+        try:
+            paginates = News.query.filter(News.user_id == user.id).paginate(p, constants.USER_COLLECTION_MAX_NEWS, False)
+            # 3.1 获取相关数据
+            news_list = paginates.items
+            current_page = paginates.page
+            total_page = paginates.pages
+        except Exception as e:
+            current_app.logger.error(e)
+
+        # 3.2 转化为字典列表
+        news_dict_list = []
+        for news in news_list if news_list else []:
+            news_dict_list.append(news.to_dict())
+
+        # 4. 返回值
+        data = {
+            "news": news_dict_list,
+            "current_page": current_page,
+            "total_page": total_page
+        }
+        return render_template("news/user_news_list.html", data=data)
+
 @profile_bp.route('/news_release', methods=["POST", "GET"])
 @login_user_data
 def news_release():
