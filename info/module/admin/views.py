@@ -16,6 +16,13 @@ def admin_index():
 @login_user_data
 def login():
     if request.method == "GET":
+        # 从session中获取管理员的信息
+        user_id = session.get("user_id", None)
+        is_admin = session.get("is_admin", None)
+        if user_id and is_admin:
+            return redirect(url_for("admin.admin_index"))
+        # if not is_admin:
+        #     return redirect(url_for("index.index"))
         return render_template("admin/login.html")
 
     # 1. 获取参数

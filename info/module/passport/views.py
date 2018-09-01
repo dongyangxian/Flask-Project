@@ -20,6 +20,9 @@ def login_out():
     session.pop("mobile")
     session.pop("nick_name")
 
+    # 清除管理员信息
+    session.pop("is_admin")
+
     return jsonify(errno=RET.OK, errmsg="已退出")
 # 127.0.0.1:5000/passport/login
 @passport_bp.route('/login', methods=["POST"])
