@@ -2,7 +2,7 @@ from flask import current_app
 from flask import session
 
 from info import db
-from info.models import News
+from info.models import News, Category
 from info.module.profile import profile_bp
 from flask import render_template, g, request, jsonify
 
@@ -10,6 +10,78 @@ from info.utlis.common import login_user_data
 from info.utlis.response_code import RET
 from info.utlis.image_store import qiniu_image_store
 from info import constants
+
+@profile_bp.route('/news_release', methods=["POST", "GET"])
+@login_user_data
+def news_release():
+    """展示新闻发布页面，及功能实现接口"""
+    if request.method == "GET":
+        # 去数据库查询新闻的分类，返回给前端处理
+        try:
+            categories = Category.query.all()
+        except Exception as e:
+            current_app.logger.error(e)
+        # 转换为字典列表
+        category_dict_list = []
+        for category in categories if categories else []:
+            category_dict_list.append(category.to_dict())
+
+        # 因为第一个分类不是真正的分类信息，所以要删除
+        category_dict_list.pop(0)
+        # 组织数据
+        data = {
+            "categories": category_dict_list
+        }
+        return render_template("news/user_news_release.html", data=data)
+
+    # 1. 获取参数
+    params_dict = request.form
+    title = params_dict.get("title")
+    category_id = params_dict.get("category_id")
+    digest = params_dict.get("digest")
+    index_image = request.files.get("index_image")
+    content = params_dict.get("content")
+    source = "个人发布"
+    user = g.user
+    # 2. 校验参数
+    # 2.1 非空判断
+    if not all([title, category_id, digest, index_image, content]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
+    # 2.2 用户登录判断
+    if not user:
+        return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
+    # 3. 逻辑处理
+    # 3.1 获取图片数据
+    image_data = index_image.read()
+    # 3.2 上传图片
+    try:
+        image_name = qiniu_image_store(image_data)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.THIRDERR, errmsg="上传图片到七牛云失败")
+    # 3.3 创建新闻模型
+    news = News()
+    news.title = title
+    news.category_id = category_id
+    news.digest = digest
+    news.index_image_url = constants.QINIU_DOMIN_PREFIX + image_name
+    news.content = content
+    news.source = source
+    news.user_id = user.id
+    # 标记为审核状态
+    news.status = 1
+    # 3.4 保存到数据库
+    try:
+        db.session.add(news)
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="保存新闻对象到数据库异常")
+
+    # 4. 返回值
+    return jsonify(errno=RET.OK, errmsg="新闻发布成功")
+
 @profile_bp.route('/collection')
 @login_user_data
 def news_collection():
