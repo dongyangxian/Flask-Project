@@ -10,6 +10,43 @@ from info.utlis.response_code import RET
 from info.utlis.image_store import qiniu_image_store
 from info import constants
 
+@profile_bp.route('/pass_info', methods=["POST", "GET"])
+@login_user_data
+def pass_info():
+    """展示修改密码接口"""
+    if request.method == "GET":
+        return render_template("news/user_pass_info.html")
+
+    # 1. 获取参数
+    params_dict = request.json
+    old_password = params_dict.get("old_password")
+    new_password = params_dict.get("new_password")
+    user = g.user
+    # 2. 校验参数
+    # 2.1 非空判断
+    if not all([old_password, new_password]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
+    # 2.2 用户登录判断
+    if not user:
+        return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
+    # 3. 逻辑处理
+    # 3.1 检查旧密码是否正确
+    if user.check_passowrd(old_password):
+        # 3.2 将新密码赋值
+        user.passwrod = new_password
+    else:
+        return jsonify(errno=RET.PARAMERR, errmsg="旧密码填写错误")
+
+    # 3.2 提交数据库
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="保存用户对象异常")
+    # 4. 返回值
+    return jsonify(errno=RET.OK, errmsg="修改密码成功")
+
 @profile_bp.route('/pic_info', methods=["POST", "GET"])
 @login_user_data
 def pic_info():
