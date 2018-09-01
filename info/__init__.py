@@ -1,6 +1,7 @@
 from logging.handlers import RotatingFileHandler
 
-from flask import Flask
+from flask import Flask, render_template
+from flask import g
 from flask.ext.wtf.csrf import generate_csrf
 from flask_sqlalchemy import SQLAlchemy
 from redis import StrictRedis
@@ -8,6 +9,7 @@ from flask_wtf import CSRFProtect
 from flask_session import Session
 from config import config_dict
 import logging
+from info.utlis.common import login_user_data
 
 def create_log(config_name):
     """记录日志信息"""
@@ -69,6 +71,13 @@ def create_app(config_name):
 
         # 3. 返回值
         return response
+
+    @app.errorhandler(404)
+    @login_user_data
+    def page_not_found(e):
+        """页面找不到引导到统一页面"""
+        user = g.user
+        return render_template("news/404.html", data={"user_info": user.to_dict() if user else []})
 
     # 注册蓝图对象
     # 为了解决循环导入，使用蓝图时在导入
