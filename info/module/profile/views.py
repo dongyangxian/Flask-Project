@@ -11,6 +11,47 @@ from info.utlis.response_code import RET
 from info.utlis.image_store import qiniu_image_store
 from info import constants
 
+@profile_bp.route('/user_follow')
+@login_user_data
+def user_followed_list():
+    """当前用户关注列表"""
+    # 1. 获取页码参数
+    p = request.args.get("p", 1)
+    user = g.user
+    # 2. 校验页码，如果不正确，赋值为1
+    try:
+        p = int(p)
+    except Exception as e:
+        current_app.logger.error(e)
+        p = 1
+
+    user_list = []
+    current_page = 1
+    total_page = 1
+    if user:
+        # 3. 逻辑处理
+        try:
+            paginates = user.followed.paginate(p, constants.USER_COLLECTION_MAX_NEWS, False)
+            # 3.1 获取相关数据
+            user_list = paginates.items
+            current_page = paginates.page
+            total_page = paginates.pages
+        except Exception as e:
+            current_app.logger.error(e)
+
+        # 3.2 转化为字典列表
+        user_dict_list = []
+        for user in user_list if user_list else []:
+            user_dict_list.append(user.to_dict())
+
+        # 4. 返回值
+        data = {
+            "users": user_dict_list,
+            "current_page": current_page,
+            "total_page": total_page
+        }
+        return render_template("news/user_follow.html", data=data)
+
 @profile_bp.route('/news_list')
 @login_user_data
 def news_list():
@@ -211,7 +252,7 @@ def pic_info():
         data = {
             "user_info": user.to_dict() if user else []
         }
-        return render_template('news/user_pic_info.html',data=data)
+        return render_template('news/user_pic_info.html', data=data)
 
     # 1. 获取参数
     # POST获取用户上传的图片二进制数据上传到七牛云
