@@ -9,6 +9,56 @@ from flask import render_template
 from info.utlis.common import login_user_data
 from info.utlis.response_code import RET
 
+@news_bp.route('/followed_user', methods=['POST'])
+@login_user_data
+def followed_user():
+    """关注 取消关注"""
+    # 1获取参数
+    user_id = request.json.get("user_id")
+    action = request.json.get("action")
+    user = g.user
+
+    #  2.1 非空判断
+    if not all([user_id, action]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
+    # 2.2 用户是否登录判断
+    if not user:
+        return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
+    if action not in ["follow", "unfollow"]:
+        return jsonify(errno=RET.PARAMERR, errmsg="action参数错误")
+
+    # 3. 逻辑处理
+    # 3.1 判断作者是否存在
+    try:
+        author = User.query.get(user_id)
+        if not author:
+            return jsonify(errno=RET.NODATA, errmsg="作者不存在")
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询作者异常")
+
+    # 3.2 根据行为去判断是关注还是取消关注
+    if action == "follow":
+        # 关注：作者没有在当前用户的偶像列表（当前用户没有关注作者）
+        if author not in user.followed:
+            user.followed.append(author)
+        else:
+            return jsonify(errno=RET.DATAEXIST, errmsg="用户已经关注改作者")
+    else:
+        # 作者在当前用户的偶像列表
+        if author in user.followed:
+            # 取消关注
+            user.followed.remove(author)
+    # 3.3 提交数据
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="用户保存到数据库异常")
+    # 4. 返回值
+    return jsonify(errno=RET.OK, errmsg="OK")
+
 # 127.0.0.1:5000/news/comment_like
 @news_bp.route('/comment_like', methods=["POST"])
 @login_user_data
