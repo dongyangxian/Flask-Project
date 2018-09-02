@@ -13,6 +13,64 @@ from info.utlis.common import login_user_data
 from info.utlis.image_store import qiniu_image_store
 from info.utlis.response_code import RET
 
+@admin_bp.route('/add_category', methods=["POST"])
+def add_category():
+    """分类的添加、修改"""
+    # 1.获取参数
+    category_id = request.json.get("id")
+    category_name = request.json.get("name")
+    # 2.校验参数
+    if not category_name:
+        return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
+
+    # 3. 逻辑处理
+    # 3.1 如果对应的分类id存在，说明是修改名称
+    if category_id:
+        category = None
+        try:
+            category = Category.query.get(category_id)
+            if not category:
+                return jsonify(errno=RET.NODATA, errmsg="分类不存在")
+        except Exception as e:
+            current_app.logger.error(e)
+            return jsonify(errno=RET.DBERR, errmsg="查询分类异常")
+        # 3.2 修改分类名称
+        category.name = category_name
+    else:
+        # 3.3 否则就是增加分类
+        category = Category()
+        category.name = category_name
+        db.session.add(category)
+
+    # 3.4 统一提交处理
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="保存分类对象异常")
+
+    # 4. 返回值
+    return jsonify(errno=RET.OK, errmsg="OK")
+
+@admin_bp.route('/category_type')
+def category_type():
+    """分类列表展示"""
+    try:
+        categories = Category.query.all()
+    except Exception as e:
+            current_app.logger.error(e)
+    # 移除最新分类
+    categories.pop(0)
+    category_dict_list = []
+    for category in categories if categories else []:
+        category_dict_list.append(category.to_dict())
+
+    data = {
+        "categories": category_dict_list
+    }
+    return render_template("admin/news_type.html", data=data)
+
 @admin_bp.route('/news_edit_detail', methods=["POST", "GET"])
 def news_edit_detail():
     """新闻编辑修改接口"""
