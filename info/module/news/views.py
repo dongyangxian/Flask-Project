@@ -224,10 +224,19 @@ def news_detail(news_id):
     # True：用户收藏过   False：未收藏
     is_collected = False
 
+    # False 当前登录用户未关注该新闻的作者 反之
+    is_followed = False
+
     # 2. 如果用户在登录的情况下,查询该用户是否收藏过
     if user:
         if news in user.collection_news:
             is_collected = True
+
+    # user 当前登录用户 ； news.user 新闻的作者
+    # 如果当前作者在用户的偶像列表中，表示关注了
+    if user and news.user:
+        if user in news.user.followers:
+            is_followed = True
 
     # -----------评论列表数据展现----------
     # 1. 在评论列表查询所有的评论
@@ -273,7 +282,8 @@ def news_detail(news_id):
         "is_collected": is_collected,
         "news": news.to_dict(),
         "user_info": user.to_dict() if user else None,
-        "news_info": news_dict_list
+        "news_info": news_dict_list,
+        "is_followed": is_followed
     }
 
     # 4. 渲染
