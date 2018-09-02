@@ -11,6 +11,26 @@ from info.module.admin import admin_bp
 from flask import render_template, request
 from info.utlis.common import login_user_data
 
+# /admin/news_review_detail?news_id=1
+@admin_bp.route('/news_review_detail', methods=['POST', 'GET'])
+@login_user_data
+def news_review_detail():
+    """新闻审核的详情页面"""
+    if request.method == "GET":
+        # 1. 获取参数
+        news_id = request.args.get("news_id")
+        # 2. 根据新闻的id去查询新闻的内容
+        try:
+            news = News.query.get(news_id)
+        except Exception as e:
+            current_app.logger.error(e)
+        # 3. 转换为字典列表
+        news_dict = news.to_dict() if news else []
+        # 4. 返回值
+        data = {
+            "news": news_dict
+        }
+        return render_template("admin/news_review_detail.html", data=data)
 # 第一次请求： /admin/news_review
 # 后面分页请求： /admin/news_review?p=1
 @admin_bp.route('/user_review')
