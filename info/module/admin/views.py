@@ -1,17 +1,20 @@
 import time
 from datetime import datetime, timedelta
 
-from flask import current_app
+from flask import current_app, jsonify
 from flask import g
 from flask import session, redirect, url_for
 
-from info import constants
+from info import constants, db
 from info.models import User, News
 from info.module.admin import admin_bp
 from flask import render_template, request
 from info.utlis.common import login_user_data
 
 # /admin/news_review_detail?news_id=1
+from info.utlis.response_code import RET
+
+
 @admin_bp.route('/news_review_detail', methods=['POST', 'GET'])
 @login_user_data
 def news_review_detail():
@@ -25,12 +28,54 @@ def news_review_detail():
         except Exception as e:
             current_app.logger.error(e)
         # 3. 转换为字典列表
-        news_dict = news.to_dict() if news else []
+        news_dict = news.to_dict() if news else None
         # 4. 返回值
         data = {
             "news": news_dict
         }
         return render_template("admin/news_review_detail.html", data=data)
+
+    # 1. 获取参数
+    news_id = request.json.get("news_id")
+    action = request.json.get("action")
+    # 2. 校验
+    if not all([news_id, action]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
+    if action not in ["accept", "reject"]:
+        return jsonify(errno=RET.PARAMERR, errmsg="action参数有误")
+    # 3. 逻辑处理
+    news = None
+    # 3.1 判断新闻是否存在
+    try:
+        news = News.query.get(news_id)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询新闻对象异常")
+
+    if not news:
+        return jsonify(errno=RET.NODATA, errmsg="新闻为空")
+
+    # 3.2 根据点击行为去判断是通过还是拒绝
+    if action == "accept":
+        news.status = 0
+    else:
+        reason = request.json.get("reason")
+        if reason:
+            news.status = -1
+            news.reason = reason
+        else:
+            return jsonify(errno=RET.PARAMERR, errmsg="请填写拒绝原因")
+
+    # 3.3 提交数据
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="保存新闻状态异常")
+    # 4. 返回值
+    return jsonify(errno=RET.OK, errmsg="OK")
+
 # 第一次请求： /admin/news_review
 # 后面分页请求： /admin/news_review?p=1
 @admin_bp.route('/user_review')
