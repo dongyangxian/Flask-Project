@@ -57,6 +57,14 @@ def other_info():
     user = g.user
     # 1. 获取用户
     user_id = request.args.get("user_id")
+    p = request.args.get("p", 1)
+
+    # 2. 校验页码，如果不正确，赋值为1
+    try:
+        p = int(p)
+    except Exception as e:
+        current_app.logger.error(e)
+        p = 1
 
     if not user_id:
         abort(404)
@@ -69,17 +77,39 @@ def other_info():
     except Exception as e:
         current_app.logger.error(e)
 
+    news_list = []
+    current_page = 1
+    total_page = 1
+
     # 3. 判断当前登录用户是否关注过该用户
     is_followed = False
     if user:
         if other.followers.filter(User.id == user.id).count() > 0:
             is_followed = True
-    data = {
-        "user_info": user.to_dict(),
-        "other_info": other.to_dict(),
-        "is_followed": is_followed
-    }
-    return render_template("news/other.html", data=data)
+
+        # 查询该作者发布过的所有新闻
+        try:
+            paginates = News.query.filter(News.user_id == user_id, News.status == 0).paginate(p, constants.USER_COLLECTION_MAX_NEWS, False)
+            # 3.1 获取相关数据
+            news_list = paginates.items
+            current_page = paginates.page
+            total_page = paginates.pages
+        except Exception as e:
+            current_app.logger.error(e)
+        # 转为字典列表
+        news_dict_list = []
+        for new in news_list if news_list else []:
+            news_dict_list.append(new.to_dict())
+
+        data = {
+            "news": news_dict_list,
+            "current_page": current_page,
+            "total_page": total_page,
+            "user_info": user.to_dict(),
+            "other_info": other.to_dict(),
+            "is_followed": is_followed
+        }
+        return render_template("news/other.html", data=data)
 
 @profile_bp.route('/user_follow')
 @login_user_data
