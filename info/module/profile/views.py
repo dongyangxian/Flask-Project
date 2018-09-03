@@ -1,8 +1,9 @@
+from flask import abort
 from flask import current_app
 from flask import session
 
 from info import db
-from info.models import News, Category
+from info.models import News, Category, User
 from info.module.profile import profile_bp
 from flask import render_template, g, request, jsonify
 
@@ -10,6 +11,75 @@ from info.utlis.common import login_user_data
 from info.utlis.response_code import RET
 from info.utlis.image_store import qiniu_image_store
 from info import constants
+
+@profile_bp.route('/other_cancel_followed', methods=["POST"])
+@login_user_data
+def other_cancel_followed():
+    """我的关注中取消关注"""
+    user = g.user
+    # 1. 获取用户
+    author_id = request.json.get("user_id")
+    action = request.json.get("action")
+
+    #  2.1 非空判断
+    if not all([author_id, action]):
+        return jsonify(errno=RET.PARAMERR, errmsg="参数不足")
+    # 2.2 用户是否登录判断
+    if not user:
+        return jsonify(errno=RET.SESSIONERR, errmsg="用户未登录")
+    if action not in ["follow", "unfollow"]:
+        return jsonify(errno=RET.PARAMERR, errmsg="action参数错误")
+
+    # 2. 获取作者模型
+    try:
+        author = User.query.get(author_id)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg="查询作者异常")
+    if action == "unfollow":
+        if author in user.followed:
+            user.followed.remove(author)
+        # 3. 提交数据
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg="用户保存到数据库异常")
+
+    return jsonify(errno=RET.OK, errmsg="OK")
+
+# 127.0.0.1:5000/profile/other_info?user_id=1
+@profile_bp.route('/other_info')
+@login_user_data
+def other_info():
+    """点击我的关注跳转至关注的用户的主页"""
+    user = g.user
+    # 1. 获取用户
+    user_id = request.args.get("user_id")
+
+    if not user_id:
+        abort(404)
+    # 2. 查询用户模型
+    other = None
+    try:
+        other = User.query.get(user_id)
+        if not other:
+            abort(404)
+    except Exception as e:
+        current_app.logger.error(e)
+
+    # 3. 判断当前登录用户是否关注过该用户
+    is_followed = False
+    if user:
+        if other.followers.filter(User.id == user.id).count() > 0:
+            is_followed = True
+    data = {
+        "user_info": user.to_dict(),
+        "other_info": other.to_dict(),
+        "is_followed": is_followed
+    }
+    return render_template("news/other.html", data=data)
 
 @profile_bp.route('/user_follow')
 @login_user_data

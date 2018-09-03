@@ -8,7 +8,7 @@
     <link rel="stylesheet" type="text/css" href="../../static/news/css/main.css">
     <script type="text/javascript" src="../../static/news/js/jquery-1.12.4.min.js"></script>
 	<script type="text/javascript" src="../../static/news/js/jquery.pagination.min.js"></script>
-    <script type="text/javascript" src="../../static/news/js/user_follow.js"></script>
+
 </head>
 <body class="inframe_body">
         <h3 class="common_title">我的关注</h3>
@@ -20,7 +20,7 @@
                     {% else %}
                     ../../static/news/images/user_pic.png
                     {% endif %}" alt="author_pic"></a>
-                    <a href="#" class="author_name">{{ user.nick_name }}</a>
+                    <a href="{{ url_for("profile.other_info") }}?user_id={{ user.id }}" target="_blank" class="author_name">{{ user.nick_name }}</a>
                     <div class="author_resume">{{ user.signature }}</div>
                     <div class="writings"><span>总篇数</span><b>{{ user.news_count }}</b></div>
                     <div class="follows"><span>粉丝</span><b>{{ user.followers_count }}</b></div>
@@ -42,5 +42,6 @@
                 });
             });
         </script>
+        <script type="text/javascript" src="../../static/news/js/user_follow.js"></script>
 </body>
 </html>
