@@ -52,7 +52,7 @@
                 <h3>他的文章</h3>
                 <ul class="article_list">
                     {% for new in data.news %}
-                        <li><a href="/news/{{ new.id }}">{{ new.title }}</a><span>{{ new.create_time }}</span></li>
+                        <li><a href="/news/{{ new.id }}" target="_blank">{{ new.title }}</a><span>{{ new.create_time }}</span></li>
                     {% endfor %}
 {#                    <li><a href="#">智能音箱“不智能”：这次轮到三星语音助手Bixby被吐槽了</a><span>2018-1-17</span></li>#}
 {#                    <li><a href="#">智能音箱“不智能”：这次轮到三星语音助手Bixby被吐槽了</a><span>2018-1-17</span></li>#}

@@ -39,7 +39,10 @@ def other_cancel_followed():
     if action == "unfollow":
         if author in user.followed:
             user.followed.remove(author)
-        # 3. 提交数据
+    else:
+        if author not in user.followed:
+            user.followed.append(author)
+    # 3. 提交数据
     try:
         db.session.commit()
     except Exception as e:
